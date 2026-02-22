@@ -1,0 +1,1272 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Electricity in Bobcity</title>
+  <style>
+    :root{
+      --bg:#2f7f8b;
+      --bg2:#2a6f79;
+      --panel:#1f5e66;
+      --card:rgba(255,255,255,.10);
+      --card2:rgba(255,255,255,.14);
+      --stroke:rgba(255,255,255,.18);
+      --text:#ecf6f7;
+      --muted:rgba(236,246,247,.75);
+      --accent:#b7d85f;
+      --accent2:#8fd3ff;
+      --warn:#ffcf5a;
+      --bad:#ff6b6b;
+      --good:#76ffb3;
+
+      --r:18px;
+      --shadow: 0 14px 40px rgba(0,0,0,.22);
+      --shadow2: 0 10px 28px rgba(0,0,0,.18);
+      --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Liberation Sans", sans-serif;
+    }
+
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family:var(--font);
+      color:var(--text);
+      background:
+        radial-gradient(1200px 700px at 20% 10%, rgba(183,216,95,.22), transparent 55%),
+        radial-gradient(900px 600px at 85% 20%, rgba(143,211,255,.18), transparent 60%),
+        linear-gradient(180deg, var(--bg), var(--bg2));
+      min-height:100vh;
+      overflow-x:hidden;
+    }
+
+    .deco{
+      position:fixed; inset:0; pointer-events:none; opacity:.55;
+      background:
+        linear-gradient(135deg, rgba(255,255,255,.06) 0 18%, transparent 18% 100%),
+        linear-gradient(315deg, rgba(255,255,255,.04) 0 16%, transparent 16% 100%);
+      mix-blend-mode:soft-light;
+    }
+    .grid{
+      position:fixed; inset:0; pointer-events:none; opacity:.25;
+      background-image:
+        linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px);
+      background-size: 44px 44px;
+      transform:skewY(-6deg) translateY(-40px);
+      transform-origin:top;
+    }
+
+    header{
+      position:sticky; top:0; z-index:20;
+      backdrop-filter: blur(10px);
+      background: linear-gradient(180deg, rgba(31,94,102,.92), rgba(31,94,102,.72));
+      border-bottom:1px solid var(--stroke);
+    }
+    .wrap{
+      max-width:1240px;
+      margin:0 auto;
+      padding:18px 18px;
+    }
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+    }
+    .brand{
+      display:flex; align-items:center; gap:12px;
+    }
+    .logo{
+      width:42px; height:42px;
+      border-radius:14px;
+      background:
+        linear-gradient(135deg, rgba(183,216,95,.95), rgba(143,211,255,.85));
+      box-shadow: var(--shadow2);
+      position:relative;
+      overflow:hidden;
+    }
+    .logo:before{
+      content:"";
+      position:absolute; inset:-30%;
+      background: linear-gradient(135deg, rgba(255,255,255,.55), transparent 55%);
+      transform: rotate(18deg);
+      opacity:.45;
+    }
+    .title{ line-height:1.05; }
+    .title h1{
+      margin:0;
+      font-size:16px;
+      letter-spacing:.7px;
+      text-transform:uppercase;
+    }
+    .title p{
+      margin:2px 0 0 0;
+      font-size:12px;
+      color:var(--muted);
+    }
+    .chip{
+      display:flex; align-items:center; gap:8px;
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,.08);
+      padding:10px 12px;
+      border-radius:999px;
+      font-size:12px;
+      color:var(--muted);
+      white-space:nowrap;
+    }
+    .dot{
+      width:8px; height:8px; border-radius:50%;
+      background: var(--accent);
+      box-shadow:0 0 0 5px rgba(183,216,95,.15);
+    }
+
+    main{
+      max-width:1240px;
+      margin:0 auto;
+      padding:18px;
+    }
+
+    .layout{
+      display:grid;
+      grid-template-columns: 420px 1fr;
+      gap:16px;
+      align-items:start;
+    }
+    @media (max-width: 980px){
+      .layout{ grid-template-columns: 1fr; }
+    }
+
+    .panel{
+      background: rgba(31,94,102,.55);
+      border:1px solid var(--stroke);
+      border-radius: var(--r);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .panel .hd{
+      padding:14px 14px 12px 14px;
+      border-bottom:1px solid var(--stroke);
+      background: linear-gradient(180deg, rgba(255,255,255,.08), transparent);
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+    }
+    .panel .hd h2{
+      margin:0;
+      font-size:13px;
+      text-transform:uppercase;
+      letter-spacing:.8px;
+    }
+    .panel .bd{ padding:14px; }
+
+    .section{
+      padding:12px;
+      border:1px solid var(--stroke);
+      background: var(--card);
+      border-radius: 16px;
+      margin-bottom:12px;
+    }
+    .section h3{
+      margin:0 0 10px 0;
+      font-size:12px;
+      letter-spacing:.6px;
+      text-transform:uppercase;
+      color:rgba(236,246,247,.92);
+      display:flex; align-items:center; justify-content:space-between;
+    }
+    .hint{
+      font-size:11px;
+      color:var(--muted);
+      margin-top:6px;
+    }
+
+    .grid2{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+    }
+
+    label{
+      display:block;
+      font-size:12px;
+      color:var(--muted);
+      margin:0 0 6px 0;
+    }
+    input, select{
+      width:100%;
+      padding:10px 10px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.18);
+      background: rgba(0,0,0,.12);
+      color:var(--text);
+      outline:none;
+    }
+    input:focus, select:focus{
+      border-color: rgba(183,216,95,.55);
+      box-shadow: 0 0 0 4px rgba(183,216,95,.12);
+    }
+
+    .row{ display:flex; gap:10px; align-items:end; }
+    .row > *{ flex:1; }
+
+    .btns{
+      display:flex; gap:10px; flex-wrap:wrap;
+      margin-top:10px;
+    }
+    button{
+      border:1px solid rgba(255,255,255,.18);
+      background: rgba(255,255,255,.10);
+      color:var(--text);
+      padding:10px 12px;
+      border-radius: 14px;
+      cursor:pointer;
+      transition: transform .06s ease, background .15s ease, border-color .15s ease;
+      font-weight:600;
+      letter-spacing:.2px;
+    }
+    button:hover{
+      background: rgba(255,255,255,.14);
+      border-color: rgba(255,255,255,.26);
+      transform: translateY(-1px);
+    }
+    .primary{
+      background: rgba(183,216,95,.22);
+      border-color: rgba(183,216,95,.40);
+    }
+    .primary:hover{
+      background: rgba(183,216,95,.26);
+      border-color: rgba(183,216,95,.55);
+    }
+    .ghost{ background: transparent; }
+
+    .pill{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:8px 10px;
+      border-radius:999px;
+      border:1px solid var(--stroke);
+      background: rgba(0,0,0,.10);
+      font-size:12px;
+      color:var(--muted);
+      white-space:nowrap;
+    }
+    .ok{
+      color: rgba(118,255,179,.95);
+      border-color: rgba(118,255,179,.28);
+      background: rgba(118,255,179,.10);
+    }
+    .warn{
+      color: rgba(255,207,90,.95);
+      border-color: rgba(255,207,90,.35);
+      background: rgba(255,207,90,.10);
+    }
+
+    /* right */
+    .content{
+      display:flex;
+      flex-direction:column;
+      gap:16px;
+    }
+    .cards{
+      display:grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap:12px;
+    }
+    @media (max-width: 980px){
+      .cards{ grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 520px){
+      .cards{ grid-template-columns: 1fr; }
+    }
+
+    .kpi{
+      border:1px solid var(--stroke);
+      background: var(--card2);
+      border-radius: var(--r);
+      box-shadow: var(--shadow2);
+      padding:14px;
+      position:relative;
+      overflow:hidden;
+    }
+    .kpi:before{
+      content:"";
+      position:absolute; inset:-60% -30% auto auto;
+      width:220px; height:220px;
+      background: radial-gradient(circle at 35% 35%, rgba(183,216,95,.35), transparent 55%);
+      transform: rotate(12deg);
+      opacity:.9;
+    }
+    .kpi .t{ font-size:12px; color:var(--muted); margin-bottom:8px; position:relative; }
+    .kpi .v{ font-size:20px; font-weight:800; letter-spacing:.2px; position:relative; }
+    .kpi .s{ margin-top:8px; font-size:12px; color:var(--muted); position:relative; }
+
+    .chart{
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,.08);
+      border-radius: var(--r);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .chart .hd{
+      padding:14px;
+      border-bottom:1px solid var(--stroke);
+      display:flex; justify-content:space-between; align-items:center; gap:10px;
+      background: linear-gradient(180deg, rgba(255,255,255,.07), transparent);
+    }
+    .chart .hd h2{
+      margin:0;
+      font-size:13px;
+      text-transform:uppercase;
+      letter-spacing:.8px;
+    }
+    .legend{
+      display:flex; gap:10px; flex-wrap:wrap;
+      color:var(--muted);
+      font-size:12px;
+    }
+    .lg{
+      display:flex; gap:8px; align-items:center;
+      border:1px solid var(--stroke);
+      background: rgba(0,0,0,.08);
+      padding:6px 10px;
+      border-radius:999px;
+    }
+    .sw{ width:12px; height:12px; border-radius:4px; }
+    .sw.base{ background: rgba(255,255,255,.70); }
+    .sw.dp{ background: rgba(183,216,95,.92); }
+    .sw.greedy{ background: rgba(143,211,255,.92); }
+    .sw.exp{ background: rgba(255,207,90,.95); }
+    .sw.cheap{ background: rgba(186,140,255,.92); }
+
+    canvas{ display:block; width:100%; height:360px; }
+    .chart.small canvas{ height:320px; }
+
+    .chart .ft{
+      padding:12px 14px;
+      border-top:1px solid var(--stroke);
+      color:var(--muted);
+      font-size:12px;
+      display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;
+    }
+
+    table{
+      width:100%;
+      border-collapse:separate;
+      border-spacing:0;
+      overflow:hidden;
+      border-radius: var(--r);
+    }
+    thead th{
+      text-align:left;
+      font-size:12px;
+      color:rgba(236,246,247,.85);
+      padding:10px 12px;
+      border-bottom:1px solid var(--stroke);
+      background: rgba(0,0,0,.10);
+      position:sticky; top:0;
+    }
+    tbody td{
+      padding:10px 12px;
+      font-size:12px;
+      color:rgba(236,246,247,.88);
+      border-bottom:1px solid rgba(255,255,255,.08);
+      vertical-align:top;
+    }
+    tbody tr:hover td{ background: rgba(255,255,255,.06); }
+    .tableWrap{
+      max-height: 320px;
+      overflow:auto;
+      border:1px solid var(--stroke);
+      border-radius: var(--r);
+      background: rgba(255,255,255,.06);
+      box-shadow: var(--shadow2);
+    }
+  </style>
+</head>
+<body>
+  <div class="deco"></div>
+  <div class="grid"></div>
+
+  <header>
+    <div class="wrap">
+      <div class="topbar">
+        <div class="brand">
+          <div class="logo" aria-hidden="true"></div>
+          <div class="title">
+            <h1>Bobcity</h1>
+            <p>Julietta Syv</p>
+          </div>
+        </div>
+        <div class="chip">
+          <span class="dot"></span>
+          Algorithm <span id="chip_algo">DP-model</span> • Budget: <span id="chip_b0">100</span>/year + <span id="chip_bg">10</span>/year
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="layout">
+      <section class="panel">
+        <div class="hd">
+          <h2>Input data</h2>
+          <span class="pill ok" id="bestBadge">Best: —</span>
+        </div>
+        <div class="bd">
+
+          <div class="section">
+            <h3>Budgeting</h3>
+            <div class="grid2">
+              <div>
+                <label>First year budget</label>
+                <input id="base_budget" type="number" value="100" min="0" step="1">
+              </div>
+              <div>
+                <label>Annual budget growth</label>
+                <input id="budget_growth" type="number" value="10" min="0" step="1">
+              </div>
+            </div>
+            <div class="row" style="margin-top:10px;">
+              <div>
+                <label>Electricity Price (optional), $/kWh</label>
+                <input id="price" type="number" value="0" min="0" step="0.1">
+              </div>
+            </div>
+            <div class="hint">
+              If Price = 0 → charts show <b>kWh</b>. If Price > 0 → charts show <b>Cost ($)</b>.
+            </div>
+          </div>
+
+          <div class="section">
+            <h3>Initial Buildings <span class="pill">kWh/month</span></h3>
+            <div class="grid2">
+              <div>
+                <label>Flats — Count</label>
+                <input id="apt_n" type="number" value="40000" min="0" step="100">
+              </div>
+              <div>
+                <label>Flats — Consumption</label>
+                <input id="apt_m" type="number" value="250" min="0" step="10">
+              </div>
+
+              <div>
+                <label>Private Houses — Count</label>
+                <input id="house_n" type="number" value="5000" min="0" step="50">
+              </div>
+              <div>
+                <label>Private Houses — Consumption</label>
+                <input id="house_m" type="number" value="400" min="0" step="10">
+              </div>
+
+              <div>
+                <label>Public Buildings — Count</label>
+                <input id="pub_n" type="number" value="300" min="0" step="10">
+              </div>
+              <div>
+                <label>Public Buildings — Consumption</label>
+                <input id="pub_m" type="number" value="3000" min="0" step="50">
+              </div>
+            </div>
+          </div>
+
+          <div class="section">
+            <h3>Building Growth (per year)</h3>
+            <div class="grid2">
+              <div>
+                <label>Flats (%)</label>
+                <input id="g_apt" type="number" value="2.0" min="0" step="0.1">
+              </div>
+              <div>
+                <label>Houses (%)</label>
+                <input id="g_house" type="number" value="1.5" min="0" step="0.1">
+              </div>
+              <div>
+                <label>Public Buildings (%)</label>
+                <input id="g_pub" type="number" value="0.5" min="0" step="0.1">
+              </div>
+              <div>
+                <label>Focus Strategy (KPI/Table)</label>
+                <select id="focus_strat">
+                  <option value="DP-model">DP-model</option>
+                  <option value="Greedy">Greedy</option>
+                  <option value="Expensive (max %)">Expensive (max %)</option>
+                  <option value="Cheap (min price)">Cheap (min price)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="row" style="margin-top:10px;">
+              <div>
+                <label>Comparison Year (1Y Chart)</label>
+                <input id="year_pick" type="number" value="1" min="1" max="10" step="1">
+              </div>
+              <div class="btns">
+                <button class="primary" id="btn_run">Calculate & Render</button>
+                <button class="ghost" id="btn_reset">Reset to Default</button>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </section>
+
+      <section class="content">
+        <div class="cards">
+          <div class="kpi">
+            <div class="t">Base (selected year)</div>
+            <div class="v" id="kpi_base">—</div>
+            <div class="s" id="kpi_base_s">—</div>
+          </div>
+          <div class="kpi">
+            <div class="t">Usage (focus strategy)</div>
+            <div class="v" id="kpi_focus">—</div>
+            <div class="s" id="kpi_focus_s">—</div>
+          </div>
+          <div class="kpi">
+            <div class="t">10-Year Savings (focus)</div>
+            <div class="v" id="kpi_save10">—</div>
+            <div class="s" id="kpi_save10_s">—</div>
+          </div>
+        </div>
+
+        <div class="chart small">
+          <div class="hd">
+            <h2>Strategy Comparison (Selected Year)</h2>
+            <div class="legend">
+              <div class="lg"><span class="sw base"></span>No Measures</div>
+              <div class="lg"><span class="sw dp"></span>DP-model</div>
+              <div class="lg"><span class="sw greedy"></span>Greedy</div>
+              <div class="lg"><span class="sw exp"></span>Expensive</div>
+              <div class="lg"><span class="sw cheap"></span>Cheap</div>
+            </div>
+          </div>
+          <canvas id="c_year" width="980" height="360"></canvas>
+          <div class="ft">
+            <span id="note_year">—</span>
+            <span>Animation: <b id="note_anim">900</b> ms</span>
+          </div>
+        </div>
+
+        <div class="chart">
+          <div class="hd">
+            <h2>10-Year Consumption (4 Strategies)</h2>
+            <div class="legend">
+              <div class="lg"><span class="sw base"></span>No Measures</div>
+              <div class="lg"><span class="sw dp"></span>DP-model</div>
+              <div class="lg"><span class="sw greedy"></span>Greedy</div>
+              <div class="lg"><span class="sw exp"></span>Expensive</div>
+              <div class="lg"><span class="sw cheap"></span>Cheap</div>
+            </div>
+          </div>
+          <canvas id="c_10y" width="980" height="360"></canvas>
+          <div class="ft">
+            <span id="note_10y">—</span>
+            <span id="note_model">-</span>
+          </div>
+        </div>
+
+        <div class="chart">
+          <div class="hd">
+            <h2>Yearly Details (Focus Strategy)</h2>
+            <div class="legend">
+              <div class="lg"><span class="sw dp" id="focusSw2"></span><span id="focusLegend2">DP-model</span></div>
+            </div>
+          </div>
+          <div class="tableWrap">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:54px;">Year</th>
+                  <th style="width:120px;">Initial Budget</th>
+                  <th style="width:90px;">Spent</th>
+                  <th style="width:90px;">Remaining</th>
+                  <th style="width:140px;">Consumption</th>
+                  <th style="width:140px;">Savings</th>
+                  <th>Measures Applied</th>
+                </tr>
+              </thead>
+              <tbody id="tbl_body"></tbody>
+            </table>
+          </div>
+          <div class="ft">
+            <span>-</span>
+          </div>
+        </div>
+
+      </section>
+    </div>
+  </main>
+
+<script>
+  // ===== helpers =====
+  const $ = (id)=>document.getElementById(id);
+  const clamp = (x,a,b)=>Math.max(a, Math.min(b,x));
+  const fmtInt = (n)=>Math.round(n).toLocaleString("en-US");
+  const fmt = (n, unit)=> fmtInt(n) + (unit ? (" " + unit) : "");
+  const fmtMoney = (n)=> "$" + fmtInt(n);
+  const deepCopy2D = (a)=>a.map(r=>r.slice());
+  const prod = (arr)=>arr.reduce((x,y)=>x*y,1);
+
+  // ===== model configuration =====
+  const CAT_NAMES = ["Flats", "Private Houses", "Public Buildings"];
+
+  // measures: cost, efficiency, stepPercentage, allowed per category (0..2)
+  const MEASURES = [
+    { name:"LED Lighting",        cost:15, eff:0.08, stepPct:20, allowed:[true,true,true] },
+    { name:"Insulation",          cost:25, eff:0.15, stepPct:10, allowed:[true,true,false] },
+    { name:"Solar Panels",        cost:30, eff:0.20, stepPct:5,  allowed:[false,true,true] },
+    { name:"Smart Meters",        cost:10, eff:0.05, stepPct:25, allowed:[true,true,true] },
+    { name:"Smart Home Systems",  cost:6,  eff:0.03, stepPct:15, allowed:[false,true,false] },
+  ];
+
+  const STRATS = ["DP-model", "Greedy", "Expensive (max %)", "Cheap (min price)"];
+
+  function readInputs(){
+    return {
+      baseBudget: +$("base_budget").value || 0,
+      budgetGrowth: +$("budget_growth").value || 0,
+      initCounts: [
+        +$("apt_n").value || 0,
+        +$("house_n").value || 0,
+        +$("pub_n").value || 0,
+      ],
+      monthlyCons: [
+        +$("apt_m").value || 0,
+        +$("house_m").value || 0,
+        +$("pub_m").value || 0,
+      ],
+      growthRates: [
+        (+$("g_apt").value || 0)/100,
+        (+$("g_house").value || 0)/100,
+        (+$("g_pub").value || 0)/100,
+      ],
+      price: +$("price").value || 0,
+      animMs: 900,
+      focusStrat: $("focus_strat").value,
+      yearPick: clamp((+$("year_pick").value||1), 1, 10),
+    };
+  }
+
+  function updateChip(){
+    const b0 = (+$("base_budget").value||0);
+    const bg = (+$("budget_growth").value||0);
+    $("chip_b0").textContent = b0.toLocaleString("en-US");
+    $("chip_bg").textContent = bg.toLocaleString("en-US");
+    $("chip_algo").textContent = $("focus_strat").value;
+  }
+
+  function factorForCategory(covRow, c){
+    // product over allowed measures: (1 - efficiency * coverage)
+    let f = 1.0;
+    for(let i=0;i<MEASURES.length;i++){
+      if(!MEASURES[i].allowed[c]) continue;
+      f *= (1.0 - MEASURES[i].eff * covRow[i]);
+    }
+    return f;
+  }
+
+  function simulate10Years(params){
+    const { baseBudget, budgetGrowth, initCounts, monthlyCons, growthRates } = params;
+
+    const state = {};
+    const history = {};
+    for(const s of STRATS){
+      state[s] = { budget: 0, cov: Array.from({length:3}, ()=>Array.from({length:MEASURES.length}, ()=>0.0)) };
+      history[s] = [];
+    }
+
+    let currentCounts = initCounts.slice();
+    const buildingsHistory = [];
+    const baseSeries = [];
+
+    for(let year=1; year<=10; year++){
+      if(year > 1){
+        const newCounts = currentCounts.map((v,i)=>Math.floor(v * (1 + growthRates[i])));
+        for(const s of STRATS){
+          for(let c=0;c<3;c++){
+            for(let m=0;m<MEASURES.length;m++){
+              if(newCounts[c] > 0){
+                state[s].cov[c][m] *= (currentCounts[c] / newCounts[c]);
+              }
+            }
+          }
+        }
+        currentCounts = newCounts;
+      }
+
+      buildingsHistory.push(currentCounts.slice());
+
+      const E0 = currentCounts.map((cnt,i)=>cnt * monthlyCons[i] * 12);
+      const yearlyTotalBase = E0.reduce((a,b)=>a+b,0);
+      baseSeries.push(yearlyTotalBase);
+
+      const yearlyInjection = baseBudget + (year - 1) * budgetGrowth;
+      for(const s of STRATS){
+        state[s].budget += yearlyInjection;
+      }
+
+      // ----- greedy variants -----
+      for(const s of ["Greedy","Expensive (max %)","Cheap (min price)"]){
+        const B = state[s].budget;
+        const cov = deepCopy2D(state[s].cov);
+        let spent = 0;
+        const purchases = Array.from({length:3}, ()=>Array.from({length:MEASURES.length}, ()=>0));
+
+        while(true){
+          let bestAction = null;
+          let bestScore = -1e100;
+
+          for(let c=0;c<3;c++){
+            for(let mIdx=0;mIdx<MEASURES.length;mIdx++){
+              const m = MEASURES[mIdx];
+              if(!m.allowed[c]) continue;
+              if(cov[c][mIdx] >= 0.9999) continue;
+              if(spent + m.cost > B) continue;
+
+              const stepSize = m.stepPct / 100.0;
+              const newC = Math.min(1.0, cov[c][mIdx] + stepSize);
+
+              const fCur = factorForCategory(cov[c], c);
+              const covNewRow = cov[c].slice();
+              covNewRow[mIdx] = newC;
+              const fNew = factorForCategory(covNewRow, c);
+
+              const savings = E0[c] * (fCur - fNew);
+
+              let score = 0;
+              if(s === "Greedy") score = savings / m.cost;
+              else if(s === "Expensive (max %)") score = savings;
+              else score = -m.cost;
+
+              if(score > bestScore){
+                bestScore = score;
+                bestAction = {c, mIdx, m};
+              }
+            }
+          }
+
+          if(!bestAction) break;
+
+          const {c, mIdx, m} = bestAction;
+          spent += m.cost;
+          purchases[c][mIdx] += 1;
+          cov[c][mIdx] = Math.min(1.0, cov[c][mIdx] + m.stepPct/100.0);
+        }
+
+        const appliedTexts = [];
+        for(let c=0;c<3;c++){
+          const catActs = [];
+          for(let mIdx=0;mIdx<MEASURES.length;mIdx++){
+            const count = purchases[c][mIdx];
+            if(count>0){
+              const addedPct = Math.min(1.0 - state[s].cov[c][mIdx], count * MEASURES[mIdx].stepPct/100.0) * 100;
+              catActs.push(`${MEASURES[mIdx].name} ×${count} (+${Math.floor(addedPct)}%)`);
+            }
+          }
+          if(catActs.length) appliedTexts.push(`[${CAT_NAMES[c]}] ` + catActs.join(", "));
+        }
+
+        state[s].budget -= spent;
+        state[s].cov = cov;
+
+        const finalE = E0.reduce((sum,_,c)=> sum + E0[c] * factorForCategory(cov[c], c), 0);
+
+        history[s].push({
+          Year: year,
+          MoneyStart: B,
+          Spent: spent,
+          Left: state[s].budget,
+          Usage: finalE,
+          Saved: yearlyTotalBase - finalE,
+          Measures: appliedTexts.length ? appliedTexts.join("; ") : "-"
+        });
+      }
+
+      // ----- DP-model -----
+      const sDp = "DP-model";
+      const Bint = Math.floor(state[sDp].budget);
+      const covDp = deepCopy2D(state[sDp].cov);
+
+      const bestAtMost = [];
+      const allowedLists = [];
+
+      for(let c=0;c<3;c++){
+        const allowedM = [];
+        for(let i=0;i<MEASURES.length;i++){
+          if(MEASURES[i].allowed[c]) allowedM.push([i, MEASURES[i]]);
+        }
+        allowedLists.push(allowedM);
+
+        const fBase = prod(allowedM.map(([origIdx, mx]) => 1.0 - mx.eff * covDp[c][origIdx]));
+        const EBase = E0[c] * fBase;
+
+        const bestExact = Array.from({length:Bint+1}, ()=>({saved:-1e100, k: Array.from({length:allowedM.length}, ()=>0)}));
+        bestExact[0] = {saved:0.0, k: Array.from({length:allowedM.length}, ()=>0)};
+
+        function dfs(pos, costSoFar, currentK){
+          if(costSoFar > Bint) return;
+          if(pos === allowedM.length){
+            let fNew = 1.0;
+            for(let idx=0; idx<allowedM.length; idx++){
+              const [origIdx, mx] = allowedM[idx];
+              const newCov = Math.min(1.0, covDp[c][origIdx] + currentK[idx] * mx.stepPct/100.0);
+              fNew *= (1.0 - mx.eff * newCov);
+            }
+            const saved = EBase - (E0[c] * fNew);
+            if(saved > bestExact[costSoFar].saved){
+              bestExact[costSoFar] = {saved, k: currentK.slice()};
+            }
+            return;
+          }
+
+          const [origIdx, mx] = allowedM[pos];
+          const remCov = 1.0 - covDp[c][origIdx];
+          if(remCov <= 1e-6){
+            currentK.push(0);
+            dfs(pos+1, costSoFar, currentK);
+            currentK.pop();
+            return;
+          }
+
+          const byCoverage = Math.ceil(remCov * 100 / mx.stepPct);
+          const byBudget = mx.cost > 0 ? Math.floor((Bint - costSoFar) / mx.cost) : 0;
+          const kMax = Math.min(byCoverage, byBudget);
+
+          for(let kk=0; kk<=kMax; kk++){
+            currentK.push(kk);
+            dfs(pos+1, costSoFar + kk*mx.cost, currentK);
+            currentK.pop();
+          }
+        }
+
+        dfs(0, 0, []);
+
+        const bam = [];
+        let curBest = {saved:0.0, k: Array.from({length:allowedM.length}, ()=>0), costUsed:0};
+        for(let cost=0; cost<=Bint; cost++){
+          if(bestExact[cost].saved > curBest.saved){
+            curBest = {saved: bestExact[cost].saved, k: bestExact[cost].k.slice(), costUsed: cost};
+          }
+          bam.push(curBest);
+        }
+        bestAtMost.push(bam);
+      }
+
+      let bestSaved = -1.0;
+      let bestPlan = [0,0,0];
+      for(let L0=0; L0<=Bint; L0++){
+        for(let L1=0; L1<=Bint-L0; L1++){
+          const L2 = Bint - L0 - L1;
+          const saved = bestAtMost[0][L0].saved + bestAtMost[1][L1].saved + bestAtMost[2][L2].saved;
+          if(saved > bestSaved){
+            bestSaved = saved;
+            bestPlan = [L0,L1,L2];
+          }
+        }
+      }
+
+      const spentDp = bestPlan.reduce((sum, lim, c)=> sum + bestAtMost[c][lim].costUsed, 0);
+
+      const appliedTextsDp = [];
+      for(let c=0;c<3;c++){
+        const lim = bestPlan[c];
+        const catActs = [];
+        const allowedM = allowedLists[c];
+        const kVec = bestAtMost[c][lim].k;
+
+        for(let idx=0; idx<allowedM.length; idx++){
+          const [origIdx, mx] = allowedM[idx];
+          const kk = kVec[idx];
+          if(kk > 0){
+            const addedCov = Math.min(1.0 - covDp[c][origIdx], kk * mx.stepPct/100.0);
+            covDp[c][origIdx] += addedCov;
+            catActs.push(`${mx.name} ×${kk} (+${Math.floor(addedCov*100)}%)`);
+          }
+        }
+        if(catActs.length) appliedTextsDp.push(`[${CAT_NAMES[c]}] ` + catActs.join(", "));
+      }
+
+      state[sDp].budget -= spentDp;
+      state[sDp].cov = covDp;
+
+      const finalEDp = E0.reduce((sum,_,c)=> sum + E0[c] * factorForCategory(covDp[c], c), 0);
+
+      history[sDp].push({
+        Year: year,
+        MoneyStart: Bint,
+        Spent: spentDp,
+        Left: state[sDp].budget,
+        Usage: finalEDp,
+        Saved: yearlyTotalBase - finalEDp,
+        Measures: appliedTextsDp.length ? appliedTextsDp.join("; ") : "-"
+      });
+    }
+
+    const stratSeries = {};
+    const totalsSaved = {};
+    for(const s of STRATS){
+      stratSeries[s] = history[s].map(r=>r.Usage);
+      totalsSaved[s] = history[s].reduce((acc,r)=>acc + r.Saved, 0);
+    }
+    let bestName = STRATS[0];
+    for(const s of STRATS){
+      if(totalsSaved[s] > totalsSaved[bestName]) bestName = s;
+    }
+
+    return { baseSeries, stratSeries, history, buildingsHistory, totalsSaved, bestName };
+  }
+
+  // ===== charts (canvas) =====
+  function setupHiDPI(canvas){
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = Math.max(1, Math.floor(rect.width * dpr));
+    canvas.height = Math.max(1, Math.floor(rect.height * dpr));
+    const ctx = canvas.getContext("2d");
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    return ctx;
+  }
+
+  function formatCompact(v){
+    const abs = Math.abs(v);
+    if(abs >= 1e9) return (v/1e9).toFixed(2) + "B";
+    if(abs >= 1e6) return (v/1e6).toFixed(2) + "M";
+    if(abs >= 1e3) return (v/1e3).toFixed(1) + "k";
+    return Math.round(v).toString();
+  }
+
+  function drawAxes(ctx, w, h, pad, xLabels, yMax){
+    ctx.clearRect(0,0,w,h);
+
+    ctx.strokeStyle = "rgba(255,255,255,0.10)";
+    ctx.lineWidth = 1;
+    const gridN = 5;
+    for(let i=0;i<=gridN;i++){
+      const y = pad.top + (h-pad.top-pad.bottom) * (i/gridN);
+      ctx.beginPath();
+      ctx.moveTo(pad.left, y);
+      ctx.lineTo(w-pad.right, y);
+      ctx.stroke();
+    }
+
+    ctx.strokeStyle = "rgba(255,255,255,0.18)";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(pad.left, pad.top);
+    ctx.lineTo(pad.left, h-pad.bottom);
+    ctx.lineTo(w-pad.right, h-pad.bottom);
+    ctx.stroke();
+
+    ctx.fillStyle = "rgba(236,246,247,0.75)";
+    ctx.font = "12px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial";
+    ctx.textAlign = "right";
+    ctx.textBaseline = "middle";
+    for(let i=0;i<=gridN;i++){
+      const v = yMax * (1 - i/gridN);
+      const y = pad.top + (h-pad.top-pad.bottom) * (i/gridN);
+      ctx.fillText(formatCompact(v), pad.left - 10, y);
+    }
+
+    ctx.textAlign = "center";
+    ctx.textBaseline = "top";
+    const innerW = w - pad.left - pad.right;
+    const n = xLabels.length;
+    for(let i=0;i<n;i++){
+      const x = pad.left + innerW * ((i+0.5)/n);
+      ctx.fillText(xLabels[i], x, h-pad.bottom + 10);
+    }
+  }
+
+  function roundRect(ctx, x, y, w, h, r, fill, stroke){
+    r = Math.min(r, w/2, h/2);
+    ctx.beginPath();
+    ctx.moveTo(x+r, y);
+    ctx.arcTo(x+w, y, x+w, y+h, r);
+    ctx.arcTo(x+w, y+h, x, y+h, r);
+    ctx.arcTo(x, y+h, x, y, r);
+    ctx.arcTo(x, y, x+w, y, r);
+    ctx.closePath();
+    if(fill) ctx.fill();
+    if(stroke) ctx.stroke();
+  }
+
+  function animateCompareBars(canvas, labels, values, colors, yMax, ms, highlightIndex){
+    const ctx = setupHiDPI(canvas);
+    const w = canvas.getBoundingClientRect().width;
+    const h = canvas.getBoundingClientRect().height;
+    const pad = {left:70, right:18, top:18, bottom:52};
+    const innerW = w - pad.left - pad.right;
+    const innerH = h - pad.top - pad.bottom;
+    const n = labels.length;
+
+    const start = performance.now();
+    function frame(now){
+      const t = clamp((now - start) / ms, 0, 1);
+      drawAxes(ctx, w, h, pad, labels, yMax);
+
+      const groupW = innerW / n;
+      const barW = Math.min(26, groupW * 0.48);
+
+      for(let i=0;i<n;i++){
+        const xCenter = pad.left + groupW*(i+0.5);
+        const v = values[i];
+        const hh = (v / yMax) * innerH * t;
+        const x0 = xCenter - barW/2;
+        const y0 = pad.top + innerH - hh;
+
+        ctx.fillStyle = colors[i] || "rgba(255,255,255,0.70)";
+        roundRect(ctx, x0, y0, barW, hh, 7, true, false);
+
+        if(i === highlightIndex){
+          ctx.strokeStyle = "rgba(255,255,255,0.92)";
+          ctx.lineWidth = 2;
+          roundRect(ctx, x0, y0, barW, hh, 7, false, true);
+        }
+      }
+
+      if(t < 1) requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function drawPolylinePartial(ctx, arr, xAt, yAt, t){
+    const n = arr.length;
+    const totalSeg = n - 1;
+    const exact = t * totalSeg;
+    const full = Math.floor(exact);
+    const frac = exact - full;
+
+    ctx.beginPath();
+    ctx.moveTo(xAt(0), yAt(arr[0]));
+    for(let i=1;i<=full;i++){
+      ctx.lineTo(xAt(i), yAt(arr[i]));
+    }
+    if(full < totalSeg){
+      const i = full;
+      const x0 = xAt(i), y0 = yAt(arr[i]);
+      const x1 = xAt(i+1), y1 = yAt(arr[i+1]);
+      ctx.lineTo(x0 + (x1-x0)*frac, y0 + (y1-y0)*frac);
+    }
+    ctx.stroke();
+  }
+
+  function animateMultiLineChart(canvas, labels, baseArr, seriesList, selectedKey, yMax, ms){
+    const ctx = setupHiDPI(canvas);
+    const w = canvas.getBoundingClientRect().width;
+    const h = canvas.getBoundingClientRect().height;
+    const pad = {left:70, right:18, top:18, bottom:52};
+    const innerW = w - pad.left - pad.right;
+    const innerH = h - pad.top - pad.bottom;
+
+    const n = labels.length;
+    const xAt = (i)=> pad.left + innerW * (i/(n-1));
+    const yAt = (v)=> pad.top + innerH * (1 - v/yMax);
+
+    const start = performance.now();
+    function frame(now){
+      const t = clamp((now - start)/ms, 0, 1);
+      drawAxes(ctx, w, h, pad, labels, yMax);
+
+      const clipW = pad.left + innerW * t;
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(0,0,clipW,h);
+      ctx.clip();
+
+      // base dashed line
+      ctx.strokeStyle = "rgba(255,255,255,0.70)";
+      ctx.lineWidth = 2.6;
+      ctx.setLineDash([7,6]);
+      ctx.beginPath();
+      ctx.moveTo(xAt(0), yAt(baseArr[0]));
+      for(let i=1;i<n;i++) ctx.lineTo(xAt(i), yAt(baseArr[i]));
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // strategy lines
+      for(const s of seriesList){
+        ctx.strokeStyle = s.color;
+        ctx.lineWidth = (s.key === selectedKey) ? 3.4 : 2.2;
+        drawPolylinePartial(ctx, s.values, xAt, yAt, 1.0);
+      }
+
+      ctx.restore();
+
+      if(t < 1) requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  // ===== render logic =====
+  let SIM = null;
+  function swClassForStrat(s){
+    if(s === "DP-model") return "dp";
+    if(s === "Greedy") return "greedy";
+    if(s === "Expensive (max %)") return "exp";
+    return "cheap";
+  }
+  function colorForStrat(s){
+    if(s === "DP-model") return "rgba(183,216,95,0.92)";
+    if(s === "Greedy") return "rgba(143,211,255,0.92)";
+    if(s === "Expensive (max %)") return "rgba(255,207,90,0.95)";
+    return "rgba(186,140,255,0.92)";
+  }
+
+  function renderAll(){
+    updateChip();
+
+    const params = readInputs();
+    $("note_anim").textContent = params.animMs.toString();
+
+    SIM = simulate10Years(params);
+
+    const best = SIM.bestName;
+    const bestScore = SIM.totalsSaved[best];
+    $("bestBadge").textContent = `Best: ${best}`;
+    $("bestBadge").title = `10-Year Savings: ${fmtInt(bestScore)} kWh`;
+
+    const focus = params.focusStrat;
+    $("focusLegend2").textContent = focus.replace(" (max %)","").replace(" (min price)","");
+    const cls = swClassForStrat(focus);
+    $("focusSw2").className = "sw " + cls;
+
+    const unitIsMoney = params.price > 0;
+    const scale = unitIsMoney ? params.price : 1;
+    const unit = unitIsMoney ? "$" : "kWh";
+
+    const y = params.yearPick;
+    $("year_pick").value = y;
+
+    const baseY = SIM.baseSeries[y-1];
+    const useY = SIM.stratSeries[focus][y-1];
+
+    // KPI Card Updates
+    $("kpi_base").textContent = unitIsMoney ? fmtMoney(baseY * scale) : fmt(baseY, "kWh");
+    $("kpi_base_s").textContent = `Year ${y}: No measures`;
+
+    $("kpi_focus").textContent = unitIsMoney ? fmtMoney(useY * scale) : fmt(useY, "kWh");
+    const savedY = baseY - useY;
+    $("kpi_focus_s").textContent = 
+      `Saved: ${unitIsMoney ? fmtMoney(savedY * scale) : fmt(savedY, "kWh")} (${((savedY/baseY)*100).toFixed(2)}%)`;
+
+    const save10 = SIM.totalsSaved[focus];
+    const base10 = SIM.baseSeries.reduce((a,b)=>a+b,0);
+    $("kpi_save10").textContent = unitIsMoney ? fmtMoney(save10 * scale) : fmt(save10, "kWh");
+    $("kpi_save10_s").textContent = 
+      `10-Year Total: ${(save10/base10*100).toFixed(2)}% of baseline`;
+
+    // 1-Year Comparison Chart
+    const labels1 = ["Base","DP","Greedy","Exp","Cheap"];
+    const values1 = [
+      baseY,
+      SIM.stratSeries["DP-model"][y-1],
+      SIM.stratSeries["Greedy"][y-1],
+      SIM.stratSeries["Expensive (max %)"][y-1],
+      SIM.stratSeries["Cheap (min price)"][y-1],
+    ].map(v=>v*scale);
+
+    const colors1 = [
+      "rgba(255,255,255,0.70)",
+      colorForStrat("DP-model"),
+      colorForStrat("Greedy"),
+      colorForStrat("Expensive (max %)"),
+      colorForStrat("Cheap (min price)"),
+    ];
+
+    const yMaxYear = Math.max(...values1) * 1.18;
+    const focusIdx = 1 + STRATS.indexOf(focus);
+    let bestIdx = 0;
+    for(let i=1;i<values1.length;i++) if(values1[i] < values1[bestIdx]) bestIdx = i;
+    const bestLabel = (bestIdx === 0) ? "No measures" : STRATS[bestIdx-1];
+
+    $("note_year").textContent = `Year ${y}: ${unitIsMoney ? 'Cost' : 'Consumption'} comparison (lower is better). Best: ${bestLabel}.`;
+    animateCompareBars($("c_year"), labels1, values1, colors1, yMaxYear, params.animMs, focusIdx);
+
+    // 10-Year Line Chart
+    const labels10 = Array.from({length:10}, (_,i)=>`Y${i+1}`);
+    const baseArr = SIM.baseSeries.map(v=>v*scale);
+    const seriesList = STRATS.map(s=>({
+      key:s,
+      values: SIM.stratSeries[s].map(v=>v*scale),
+      color: colorForStrat(s)
+    }));
+
+    const yMax10 = Math.max(...baseArr, ...seriesList.flatMap(s=>s.values)) * 1.18;
+    $("note_10y").textContent = unitIsMoney ? "Showing energy costs ($)." : "Showing consumption (kWh).";
+    animateMultiLineChart($("c_10y"), labels10, baseArr, seriesList, focus, yMax10, params.animMs);
+
+    // Render Table
+    renderTable(focus, unitIsMoney, scale);
+  }
+
+  function renderTable(focus, unitIsMoney, scale){
+    const body = $("tbl_body");
+    body.innerHTML = "";
+    const rows = SIM.history[focus];
+
+    for(const r of rows){
+      const tr = document.createElement("tr");
+      const usage = unitIsMoney ? fmtMoney(r.Usage * scale) : fmt(r.Usage, "kWh");
+      const saved = unitIsMoney ? fmtMoney(r.Saved * scale) : fmt(r.Saved, "kWh");
+
+      tr.innerHTML = `
+        <td>${r.Year}</td>
+        <td>${fmt(r.MoneyStart, "units")}</td>
+        <td>${fmt(r.Spent, "units")}</td>
+        <td>${fmt(r.Left, "units")}</td>
+        <td>${usage}</td>
+        <td>${saved}</td>
+        <td>${escapeHtml(r.Measures)}</td>
+      `;
+      body.appendChild(tr);
+    }
+  }
+
+  function escapeHtml(s){
+    return String(s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
+  }
+
+  // ===== events =====
+  function resetDefaults(){
+    $("base_budget").value = 100;
+    $("budget_growth").value = 10;
+    $("price").value = 0;
+    $("apt_n").value = 40000;
+    $("apt_m").value = 250;
+    $("house_n").value = 5000;
+    $("house_m").value = 400;
+    $("pub_n").value = 300;
+    $("pub_m").value = 3000;
+    $("g_apt").value = 2.0;
+    $("g_house").value = 1.5;
+    $("g_pub").value = 0.5;
+    $("focus_strat").value = "DP-model";
+    $("year_pick").value = 1;
+    updateChip();
+    renderAll();
+  }
+
+  $("btn_run").addEventListener("click", renderAll);
+  $("btn_reset").addEventListener("click", resetDefaults);
+
+  let tmr = null;
+  function schedule(){
+    updateChip();
+    if(tmr) clearTimeout(tmr);
+    tmr = setTimeout(()=>renderAll(), 280);
+  }
+
+  [
+    "base_budget","budget_growth","price",
+    "apt_n","apt_m","house_n","house_m","pub_n","pub_m",
+    "g_apt","g_house","g_pub","focus_strat","year_pick"
+  ].forEach(id=>{
+    $(id).addEventListener("input", schedule);
+    $(id).addEventListener("change", schedule);
+  });
+
+  window.addEventListener("resize", ()=> setTimeout(renderAll, 120));
+
+  updateChip();
+  setTimeout(renderAll, 80);
+</script>
+</body>
+</html>
