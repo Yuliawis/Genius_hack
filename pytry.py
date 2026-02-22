@@ -6,40 +6,39 @@ import math
 
 np.random.seed(42)
 
-# --- 1. ІНТЕРФЕЙС НАЛАШТУВАНЬ (SIDEBAR) ---
-st.set_page_config(page_title="Енергоефективність Міста", layout="wide")
-st.title("🏙️ Динамічна симуляція енергоефективності міста")
+# sidebar
+st.set_page_config(page_title="Electricity for Bobcity", layout="wide")
+st.title("Dynamic map simulation of the buildings in the city")
 
-st.sidebar.header("💰 Фінанси")
-base_budget = st.sidebar.number_input("Поповнення бюджету (у.о./рік)", value=100)
-budget_growth = st.sidebar.number_input("Щорічний приріст поповнення (у.о.)", value=10)
+st.sidebar.header("Money")
+base_budget = st.sidebar.number_input("Money per year)", value=100)
+budget_growth = st.sidebar.number_input("Increase in money per year", value=10)
 
-st.sidebar.header("🏢 Початкова кількість будівель")
-init_apartments = st.sidebar.number_input("Квартири", value=40000, step=1000)
-init_houses = st.sidebar.number_input("Приватні будинки", value=5000, step=500)
-init_public = st.sidebar.number_input("Громадські будівлі", value=300, step=50)
+st.sidebar.header("Number of building at start")
+init_apartments = st.sidebar.number_input("Flats", value=40000, step=1000)
+init_houses = st.sidebar.number_input("Private mansions", value=5000, step=500)
+init_public = st.sidebar.number_input("Government buildings", value=300, step=50)
 
-st.sidebar.header("📈 Темп зростання будівель (% щороку)")
-growth_apartments = st.sidebar.number_input("Приріст квартир (%)", value=2.0, step=0.5) / 100
-growth_houses = st.sidebar.number_input("Приріст приватних будинків (%)", value=1.5, step=0.5) / 100
-growth_public = st.sidebar.number_input("Приріст громадських будівель (%)", value=0.5, step=0.5) / 100
+st.sidebar.header("Building growth rate (per year)")
+growth_apartments = st.sidebar.number_input("Flats (%)", value=2.0, step=0.5) / 100
+growth_houses = st.sidebar.number_input("Private mansions (%)", value=1.5, step=0.5) / 100
+growth_public = st.sidebar.number_input("Government buildings (%)", value=0.5, step=0.5) / 100
 
 monthly_cons = [250, 400, 3000]
-cat_names = ["Квартири", "Приватні будинки", "Громадські будівлі"]
+cat_names = ["Flats", "Private mansions", "Government buildings"]
 
 measures = [
-    {"name": "LED освітлення", "cost": 15, "eff": 0.08, "stepPct": 20, "allowed": [True, True, True]},
-    {"name": "Утеплення", "cost": 25, "eff": 0.15, "stepPct": 10, "allowed": [True, True, False]},
-    {"name": "Сонячні панелі", "cost": 30, "eff": 0.20, "stepPct": 5, "allowed": [False, True, True]},
-    {"name": "Smart-лічильники", "cost": 10, "eff": 0.05, "stepPct": 25, "allowed": [True, True, True]},
-    {"name": "Розумний будинок", "cost": 6, "eff": 0.03, "stepPct": 15, "allowed": [False, True, False]}
+    {"name": "LED lightning", "cost": 15, "eff": 0.08, "stepPct": 20, "allowed": [True, True, True]},
+    {"name": "Insulation", "cost": 25, "eff": 0.15, "stepPct": 10, "allowed": [True, True, False]},
+    {"name": "Solar panels", "cost": 30, "eff": 0.20, "stepPct": 5, "allowed": [False, True, True]},
+    {"name": "Smart-counters", "cost": 10, "eff": 0.05, "stepPct": 25, "allowed": [True, True, True]},
+    {"name": "Smart house system", "cost": 6, "eff": 0.03, "stepPct": 15, "allowed": [False, True, False]}
 ]
 
-# --- 2. ГОЛОВНА ФУНКЦІЯ СИМУЛЯЦІЇ ---
-def simulate_dynamic():
-    strats = ["Комплексна DP-модель 🏆", "Оптимальна (Жадібна)", "Дорогі (Макс %)", "Дешеві (Мін ціна)"]
+# map simulation
+def dynamic_simulation():
+    strats = ["DP-model", "Greedy", "Expensive (max %)", "Cheap (min price)"]
     
-    # Глобальний стан для кожної стратегії: переносимо бюджет і покриття (0.0..1.0)
     state = {s: {"budget": 0, "cov": [[0.0 for _ in measures] for _ in range(3)]} for s in strats}
     
     history = {s: [] for s in strats}
@@ -47,38 +46,32 @@ def simulate_dynamic():
     current_counts = [init_apartments, init_houses, init_public]
 
     for year in range(1, 11):
-        # 1. Зростання міста та розбавлення покриття (Dilution)
         if year > 1:
             new_counts = [int(current_counts[i] * (1 + [growth_apartments, growth_houses, growth_public][i])) for i in range(3)]
             for s in strats:
                 for c in range(3):
                     for m in range(len(measures)):
                         if new_counts[c] > 0:
-                            # Старе покриття "розмазується" на більшу кількість будівель
                             state[s]["cov"][c][m] *= (current_counts[c] / new_counts[c])
             current_counts = new_counts
             
         buildings_history[year] = current_counts.copy()
         
-        # Базове споживання цього року (якби нічого не впроваджували НІКОЛИ)
         E0 = [current_counts[i] * monthly_cons[i] * 12 for i in range(3)]
         yearly_total_base = sum(E0)
         
-        # Поповнення бюджету
         yearly_injection = base_budget + (year - 1) * budget_growth
         for s in strats:
             state[s]["budget"] += yearly_injection
 
-        # =========================================================
-        # ЖАДІБНІ СТРАТЕГІЇ (Динамічні кроки)
-        # =========================================================
-        for s in ["Оптимальна (Жадібна)", "Дорогі (Макс %)", "Дешеві (Мін ціна)"]:
+        # greedy strategy
+
+        for s in ["Greedy", "Expensive (max %)", "Cheap (min price)"]:
             B = state[s]["budget"]
             cov = [row[:] for row in state[s]["cov"]]
             spent = 0
             purchases = [[0]*len(measures) for _ in range(3)]
             
-            # Динамічний пошук найкращого "кроку"
             while True:
                 best_action = None
                 best_score = -1e100
@@ -88,7 +81,6 @@ def simulate_dynamic():
                         if not m["allowed"][c] or cov[c][m_idx] >= 0.9999 or spent + m["cost"] > B:
                             continue
                             
-                        # Рахуємо маржинальну економію від 1 кроку
                         step_size = m["stepPct"] / 100.0
                         new_c = min(1.0, cov[c][m_idx] + step_size)
                         
@@ -97,22 +89,21 @@ def simulate_dynamic():
                         
                         savings = E0[c] * (f_cur - f_new)
                         
-                        if s == "Оптимальна (Жадібна)": score = savings / m["cost"] # Макс ROI
-                        elif s == "Дорогі (Макс %)": score = savings                # Макс ефект у кВт
-                        else: score = -m["cost"]                                    # Найдешевші
+                        if s == "Greedy": score = savings / m["cost"]
+                        elif s == "Expensive (max %)": score = savings
+                        else: score = -m["cost"]
                         
                         if score > best_score:
                             best_score = score
                             best_action = (c, m_idx, m)
                 
-                if not best_action: break # Немає доступних або вигідних кроків
+                if not best_action: break
                 
                 c, m_idx, m = best_action
                 spent += m["cost"]
                 purchases[c][m_idx] += 1
                 cov[c][m_idx] = min(1.0, cov[c][m_idx] + m["stepPct"] / 100.0)
 
-            # Формуємо красивий текст і зберігаємо стан
             applied_texts = []
             for c in range(3):
                 cat_acts = []
@@ -125,18 +116,16 @@ def simulate_dynamic():
             state[s]["budget"] -= spent
             state[s]["cov"] = cov
             
-            # Підсумкове споживання
             final_E = sum(E0[c] * math.prod(1.0 - mx["eff"] * cov[c][i] for i, mx in enumerate(measures) if mx["allowed"][c]) for c in range(3))
             history[s].append({
-                "Рік": year, "Бюджет (поч)": B, "Витрачено": spent, "Залишок": state[s]["budget"],
-                "Споживання (кВт-год)": final_E, "Зекономлено від базового": yearly_total_base - final_E,
-                "Заходи (докуплено)": "; ".join(applied_texts) if applied_texts else "-"
+                "Year": year, "Money per year (st)": B, "Spent": spent, "Left": state[s]["budget"],
+                "Usage (kW-hour)": final_E, "Saved from the original": yearly_total_base - final_E,
+                "Measurements (done)": "; ".join(applied_texts) if applied_texts else "-"
             })
 
-        # =========================================================
-        # КОМПЛЕКСНА DP-МОДЕЛЬ
-        # =========================================================
-        s_dp = "Комплексна DP-модель 🏆"
+        # DP-model
+
+        s_dp = "DP-model"
         B = int(state[s_dp]["budget"])
         cov = [row[:] for row in state[s_dp]["cov"]]
         best_at_most = []
@@ -146,7 +135,6 @@ def simulate_dynamic():
             allowed_m = [(i, m) for i, m in enumerate(measures) if m["allowed"][c]]
             allowed_lists.append(allowed_m)
             
-            # Поточне споживання категорії до нових інвестицій
             f_base = math.prod(1.0 - mx["eff"] * cov[c][orig_idx] for orig_idx, mx in allowed_m)
             E_base = E0[c] * f_base
             
@@ -187,7 +175,6 @@ def simulate_dynamic():
                 bam.append(cur_best)
             best_at_most.append(bam)
 
-        # Розподіл бюджету L0 + L1 + L2 <= B
         best_saved, best_plan = -1.0, (0, 0, 0)
         for L0 in range(B + 1):
             for L1 in range(B - L0 + 1):
@@ -215,24 +202,23 @@ def simulate_dynamic():
         final_E_dp = sum(E0[c] * math.prod(1.0 - mx["eff"] * cov[c][i] for i, mx in enumerate(measures) if mx["allowed"][c]) for c in range(3))
         
         history[s_dp].append({
-            "Рік": year, "Бюджет (поч)": B, "Витрачено": spent_dp, "Залишок": state[s_dp]["budget"],
-            "Споживання (кВт-год)": final_E_dp, "Зекономлено від базового": yearly_total_base - final_E_dp,
-            "Заходи (докуплено)": "; ".join(applied_texts) if applied_texts else "-"
+            "Year": year, "Money per year (st)": B, "Spent": spent_dp, "Left": state[s_dp]["budget"],
+            "Usage (kW-hour)": final_E_dp, "Saved from the original": yearly_total_base - final_E_dp,
+            "Measurements (done)": "; ".join(applied_texts) if applied_texts else "-"
         })
 
     return {k: pd.DataFrame(v) for k, v in history.items()}, buildings_history
 
-# Запуск
-with st.spinner('Симуляція 10 років...'):
-    results, b_history = simulate_dynamic()
+# Start
+with st.spinner('Simulation for 10 years'):
+    results, b_history = dynamic_simulation()
 
-# --- 3. ВІЗУАЛІЗАЦІЯ ---
+# --- 3. ВІЗУАЛІЗАЦІЯ (КАРТА ТА ГРАФІК) ---
 st.write("---")
+st.subheader("Map or the charging city")
+selected_year = st.slider("Pick a year to see how the city looked", 1, 10, 1)
 
-st.subheader("🗺️ Карта розвитку міста")
-selected_year = st.slider("Оберіть рік для перегляду забудови", 1, 10, 1)
-
-fig_map, ax_map = plt.subplots(figsize=(12, 12))
+fig_map, ax_map = plt.subplots(figsize=(12, 8))
 scale = [100, 20, 5] 
 colors = ["#3498db", "#2ecc71", "#e74c3c"]
 
@@ -241,51 +227,92 @@ for i, b_type in enumerate(cat_names):
     dots_count = int(count / scale[i])
     x = np.random.uniform(0, 100, dots_count)
     y = np.random.uniform(0, 100, dots_count)
-    ax_map.scatter(x, y, label=f"{b_type} ({count} шт.)", color=colors[i], alpha=0.7, edgecolors='w', s=100 if i==2 else 60)
+    ax_map.scatter(x, y, label=f"{b_type} ({count})", color=colors[i], alpha=0.7, edgecolors='w', s=100 if i==2 else 60)
 
-ax_map.set_xlim(0, 100)
-ax_map.set_ylim(0, 100)
-ax_map.axis('off')
+ax_map.set_xlim(0, 100); ax_map.set_ylim(0, 100); ax_map.axis('off')
 ax_map.legend(loc='upper right', bbox_to_anchor=(1.15, 1.05), fontsize=12)
 st.pyplot(fig_map, use_container_width=True)
 
 
-# === БЛОК 2: ВЕЛИКИЙ ГРАФІК НА ВСЮ ШИРИНУ ===
 st.write("---")
-st.subheader("📊 Порівняння 4-х стратегій (Детальний графік)")
+st.subheader("4 strategies graph")
 
-fig, ax = plt.subplots(figsize=(20, 15))
+fig, ax = plt.subplots(figsize=(15, 9))
 
 plot_colors = ['#2ecc71', '#e74c3c', '#f39c12', '#9b59b6']
 for (strat_name, df), color in zip(results.items(), plot_colors):
-    ax.plot(df["Рік"], df["Споживання (кВт-год)"], marker='o', markersize=8, label=strat_name, color=color, linewidth=2)
+    ax.plot(df["Year"], df["Usage (kW-hour)"], marker='o', markersize=8, label=strat_name, color=color, linewidth=2)
 
-base_cons_line = df["Споживання (кВт-год)"] + df["Зекономлено від базового"]
-ax.plot(df["Рік"], base_cons_line, color='black', linestyle='--', alpha=0.5, label='Без заходів (зростаюче місто)', linewidth=2)
+base_cons_line = df["Usage (kW-hour)"] + df["Saved from the original"]
+ax.plot(df["Year"], base_cons_line, color='black', linestyle='--', alpha=0.5, label='Without measurements', linewidth=2)
         
-ax.set_xlabel("Рік", fontsize=16)
-ax.set_ylabel("Споживання (кВт-год)", fontsize=16)
+ax.set_xlabel("Year", fontsize=16)
+ax.set_ylabel("Usage (kW-hour)", fontsize=16)
 ax.tick_params(axis='both', which='major', labelsize=14)
 ax.legend(fontsize=14)
 ax.grid(True, alpha=0.5)
 
 st.pyplot(fig, use_container_width=True)
 
-st.write("---")
-st.subheader("📋 Детальні звіти (Купівля кроків та накопичення ефекту)")
+# Conclusion
 
-tab1, tab2, tab3, tab4 = st.tabs(["Комплексна DP-модель 🏆", "Оптимальна (Жадібна)", "Дорогі (Макс %)", "Дешеві (Мін ціна)"])
+st.write("---")
+st.subheader("Conclusion: how much we saved in 10 years")
+
+# how much we saved for each strategy
+
+totals_data = []
+for strat_name, df in results.items():
+    total_saved = df["Saved from the original"].sum()
+    totals_data.append({"Strategy": strat_name, "Total savings (kW-hour)": total_saved})
+
+df_totals = pd.DataFrame(totals_data)
+
+# the best strategy
+best_strat = df_totals.loc[df_totals["Total savings (kW-hour)"].idxmax()]
+best_name = best_strat["Strategy"]
+best_score = best_strat["Total savings (kW-hour)"]
+
+col_table, col_winner = st.columns([1, 1])
+
+with col_table:
+    st.dataframe(df_totals.sort_values(by="Total savings (kW-hour)", ascending=False).reset_index(drop=True), use_container_width=True)
+
+with col_winner:
+    st.markdown(f"""
+    <div style="
+        border: 4px solid #f1c40f; 
+        border-radius: 15px; 
+        padding: 30px; 
+        text-align: center; 
+        background: linear-gradient(145deg, #2c3e50, #34495e); 
+        color: white;
+        box-shadow: 5px 5px 15px rgba(0,0,0,0.3);
+    ">
+        <h2 style="margin-top: 0; color: #ecf0f1;">The best strategy:</h2>
+        <h1 style="color: #f1c40f; font-size: 2.5em; margin: 10px 0;">{best_name}</h1>
+        <h3 style="color: #ecf0f1; font-weight: normal;">In total we saved:</h3>
+        <h1 style="color: #2ecc71; font-size: 3em; margin: 0;">{best_score:,.0f} <span style="font-size: 0.5em; color: #bdc3c7;">kW-hour</span></h1>
+    </div>
+    """, unsafe_allow_html=True)
+
+
+# In details
+st.write("---")
+st.subheader("Details")
+
+tab1, tab2, tab3, tab4 = st.tabs(["DP-model", "Greedy", "Expensive (max %)", "Cheap (min price)"])
 
 with tab1:
-    st.markdown("**DP-модель**: Точний пошук комбінацій. Забезпечує математично ідеальний розподіл бюджету.")
-    st.dataframe(results["Комплексна DP-модель 🏆"], use_container_width=True)
+    st.markdown("**DP-модель**")
+    st.dataframe(results["DP-model"], use_container_width=True)
 
 with tab2:
-    st.markdown("**Жадібний (Оптимальна)**: Динамічно рахує маржинальний ROI для кожного 1 кроку. Тепер змагається з DP на рівних!")
-    st.dataframe(results["Оптимальна (Жадібна)"], use_container_width=True)
+    st.markdown("**Greedy**")
+    st.dataframe(results["Greedy"], use_container_width=True)
 
 with tab3:
-    st.dataframe(results["Дорогі (Макс %)"], use_container_width=True)
+    st.dataframe(results["Expensive (max %)"], use_container_width=True)
 
 with tab4:
-    st.dataframe(results["Дешеві (Мін ціна)"], use_container_width=True)
+    st.dataframe(results["Cheap (min price)"], use_container_width=True)
