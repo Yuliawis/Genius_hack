@@ -29,10 +29,10 @@ cat_names = ["Flats", "Private mansions", "Government buildings"]
 
 measures = [
     {"name": "LED lightning", "cost": 15, "eff": 0.08, "stepPct": 20, "allowed": [True, True, True]},
-    {"name": "Insulation", "cost": 25, "eff": 0.15, "stepPct": 10, "allowed": [True, True, False]},
-    {"name": "Solar panels", "cost": 30, "eff": 0.20, "stepPct": 5, "allowed": [False, True, True]},
+    {"name": "Insulation", "cost": 25, "eff": 0.15, "stepPct": 10, "allowed": [True, True, True]},
+    {"name": "Solar panels", "cost": 30, "eff": 0.20, "stepPct": 5, "allowed": [True, True, True]},
     {"name": "Smart-counters", "cost": 10, "eff": 0.05, "stepPct": 25, "allowed": [True, True, True]},
-    {"name": "Smart house system", "cost": 6, "eff": 0.03, "stepPct": 15, "allowed": [False, True, False]}
+    {"name": "Smart house system", "cost": 6, "eff": 0.03, "stepPct": 15, "allowed": [True, True, True]}
 ]
 
 # map simulation
@@ -110,7 +110,7 @@ def dynamic_simulation():
                 for m_idx, count in enumerate(purchases[c]):
                     if count > 0:
                         added_pct = min(1.0 - state[s]["cov"][c][m_idx], count * measures[m_idx]["stepPct"] / 100.0) * 100
-                        cat_acts.append(f"{measures[m_idx]['name']} x{count} (+{int(added_pct)}%)")
+                        cat_acts.append(f"{measures[m_idx]['name']} (+{int(added_pct)}%)")
                 if cat_acts: applied_texts.append(f"[{cat_names[c]}] " + ", ".join(cat_acts))
 
             state[s]["budget"] -= spent
@@ -193,7 +193,7 @@ def dynamic_simulation():
                 if kk > 0:
                     added_cov = min(1.0 - cov[c][orig_idx], kk * mx["stepPct"] / 100.0)
                     cov[c][orig_idx] += added_cov
-                    cat_acts.append(f"{mx['name']} x{kk} (+{int(added_cov*100)}%)")
+                    cat_acts.append(f"{mx['name']} (+{int(added_cov*100)}%)")
             if cat_acts: applied_texts.append(f"[{cat_names[c]}] " + ", ".join(cat_acts))
 
         state[s_dp]["budget"] -= spent_dp
