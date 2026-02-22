@@ -119,7 +119,7 @@ def dynamic_simulation():
             final_E = sum(E0[c] * math.prod(1.0 - mx["eff"] * cov[c][i] for i, mx in enumerate(measures) if mx["allowed"][c]) for c in range(3))
             history[s].append({
                 "Year": year, "Money per year (st)": B, "Spent": spent, "Left": state[s]["budget"],
-                "Usage (kW-hour)": final_E, "Saved from the original": yearly_total_base - final_E,
+                "Usage (kWh-hour)": final_E, "Saved from the original": yearly_total_base - final_E,
                 "Measurements (done)": "; ".join(applied_texts) if applied_texts else "-"
             })
 
@@ -203,7 +203,7 @@ def dynamic_simulation():
         
         history[s_dp].append({
             "Year": year, "Money per year (st)": B, "Spent": spent_dp, "Left": state[s_dp]["budget"],
-            "Usage (kW-hour)": final_E_dp, "Saved from the original": yearly_total_base - final_E_dp,
+            "Usage (kWh-hour)": final_E_dp, "Saved from the original": yearly_total_base - final_E_dp,
             "Measurements (done)": "; ".join(applied_texts) if applied_texts else "-"
         })
 
@@ -213,20 +213,29 @@ def dynamic_simulation():
 with st.spinner('Simulation for 10 years'):
     results, b_history = dynamic_simulation()
 
-# --- 3. ВІЗУАЛІЗАЦІЯ (КАРТА ТА ГРАФІК) ---
+scale = [100, 20, 5] 
+max_dots = [int(max(b_history[y][i] for y in range(1, 11)) / scale[i]) for i in range(3)]
+
+np.random.seed(42)
+city_coordinates = []
+for max_d in max_dots:
+    x_coords = np.random.uniform(0, 100, max_d)
+    y_coords = np.random.uniform(0, 100, max_d)
+    city_coordinates.append((x_coords, y_coords))
+
+# Visualisation
 st.write("---")
-st.subheader("Map or the charging city")
+st.subheader("Map of the changing city")
 selected_year = st.slider("Pick a year to see how the city looked", 1, 10, 1)
 
 fig_map, ax_map = plt.subplots(figsize=(12, 8))
-scale = [100, 20, 5] 
 colors = ["#3498db", "#2ecc71", "#e74c3c"]
 
 for i, b_type in enumerate(cat_names):
     count = b_history[selected_year][i]
     dots_count = int(count / scale[i])
-    x = np.random.uniform(0, 100, dots_count)
-    y = np.random.uniform(0, 100, dots_count)
+    x = city_coordinates[i][0][:dots_count]
+    y = city_coordinates[i][1][:dots_count]
     ax_map.scatter(x, y, label=f"{b_type} ({count})", color=colors[i], alpha=0.7, edgecolors='w', s=100 if i==2 else 60)
 
 ax_map.set_xlim(0, 100); ax_map.set_ylim(0, 100); ax_map.axis('off')
@@ -235,19 +244,19 @@ st.pyplot(fig_map, use_container_width=True)
 
 
 st.write("---")
-st.subheader("4 strategies graph")
+st.subheader("Strategies graph")
 
 fig, ax = plt.subplots(figsize=(15, 9))
 
 plot_colors = ['#2ecc71', '#e74c3c', '#f39c12', '#9b59b6']
 for (strat_name, df), color in zip(results.items(), plot_colors):
-    ax.plot(df["Year"], df["Usage (kW-hour)"], marker='o', markersize=8, label=strat_name, color=color, linewidth=2)
+    ax.plot(df["Year"], df["Usage (kWh-hour)"], marker='o', markersize=8, label=strat_name, color=color, linewidth=2)
 
-base_cons_line = df["Usage (kW-hour)"] + df["Saved from the original"]
+base_cons_line = df["Usage (kWh-hour)"] + df["Saved from the original"]
 ax.plot(df["Year"], base_cons_line, color='black', linestyle='--', alpha=0.5, label='Without measurements', linewidth=2)
         
 ax.set_xlabel("Year", fontsize=16)
-ax.set_ylabel("Usage (kW-hour)", fontsize=16)
+ax.set_ylabel("Usage (kWh-hour)", fontsize=16)
 ax.tick_params(axis='both', which='major', labelsize=14)
 ax.legend(fontsize=14)
 ax.grid(True, alpha=0.5)
@@ -264,24 +273,24 @@ st.subheader("Conclusion: how much we saved in 10 years")
 totals_data = []
 for strat_name, df in results.items():
     total_saved = df["Saved from the original"].sum()
-    totals_data.append({"Strategy": strat_name, "Total savings (kW-hour)": total_saved})
+    totals_data.append({"Strategy": strat_name, "Total savings (kWh-hour)": total_saved})
 
 df_totals = pd.DataFrame(totals_data)
 
 # the best strategy
-best_strat = df_totals.loc[df_totals["Total savings (kW-hour)"].idxmax()]
+best_strat = df_totals.loc[df_totals["Total savings (kWh-hour)"].idxmax()]
 best_name = best_strat["Strategy"]
-best_score = best_strat["Total savings (kW-hour)"]
+best_score = best_strat["Total savings (kWh-hour)"]
 
 col_table, col_winner = st.columns([1, 1])
 
 with col_table:
-    st.dataframe(df_totals.sort_values(by="Total savings (kW-hour)", ascending=False).reset_index(drop=True), use_container_width=True)
+    st.dataframe(df_totals.sort_values(by="Total savings (kWh-hour)", ascending=False).reset_index(drop=True), use_container_width=True)
 
 with col_winner:
     st.markdown(f"""
     <div style="
-        border: 4px solid #f1c40f; 
+        border: 4px solid #6e0000 
         border-radius: 15px; 
         padding: 30px; 
         text-align: center; 
@@ -290,9 +299,9 @@ with col_winner:
         box-shadow: 5px 5px 15px rgba(0,0,0,0.3);
     ">
         <h2 style="margin-top: 0; color: #ecf0f1;">The best strategy:</h2>
-        <h1 style="color: #f1c40f; font-size: 2.5em; margin: 10px 0;">{best_name}</h1>
+        <h1 style="color: #6e0000; font-size: 2.5em; margin: 10px 0;">{best_name}</h1>
         <h3 style="color: #ecf0f1; font-weight: normal;">In total we saved:</h3>
-        <h1 style="color: #2ecc71; font-size: 3em; margin: 0;">{best_score:,.0f} <span style="font-size: 0.5em; color: #bdc3c7;">kW-hour</span></h1>
+        <h1 style="color: #2ecc71; font-size: 3em; margin: 0;">{best_score:,.0f} <span style="font-size: 0.5em; color: #bdc3c7;">kWh-hour</span></h1>
     </div>
     """, unsafe_allow_html=True)
 
@@ -312,7 +321,9 @@ with tab2:
     st.dataframe(results["Greedy"], use_container_width=True)
 
 with tab3:
+    st.markdown("**Expensive (max %)**")
     st.dataframe(results["Expensive (max %)"], use_container_width=True)
 
 with tab4:
+    st.markdown("**Cheap (min price)**")
     st.dataframe(results["Cheap (min price)"], use_container_width=True)
