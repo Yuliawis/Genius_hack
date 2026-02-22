@@ -228,43 +228,49 @@ with st.spinner('Симуляція 10 років...'):
 
 # --- 3. ВІЗУАЛІЗАЦІЯ ---
 st.write("---")
-col_map, col_chart = st.columns([1, 1])
 
-with col_map:
-    st.subheader("🗺️ Карта розвитку міста")
-    selected_year = st.slider("Рік", 1, 10, 1)
-    
-    fig_map, ax_map = plt.subplots(figsize=(6, 6))
-    scale = [100, 20, 5] 
-    colors = ["#3498db", "#2ecc71", "#e74c3c"]
-    
-    for i, b_type in enumerate(cat_names):
-        count = b_history[selected_year][i]
-        dots_count = int(count / scale[i])
-        x = np.random.uniform(0, 100, dots_count)
-        y = np.random.uniform(0, 100, dots_count)
-        ax_map.scatter(x, y, label=f"{b_type} ({count} шт.)", color=colors[i], alpha=0.7, edgecolors='w', s=50 if i==2 else 30)
+st.subheader("🗺️ Карта розвитку міста")
+selected_year = st.slider("Оберіть рік для перегляду забудови", 1, 10, 1)
 
-    ax_map.set_xlim(0, 100); ax_map.set_ylim(0, 100); ax_map.axis('off')
-    ax_map.legend(loc='upper right', bbox_to_anchor=(1.1, 1.1))
-    st.pyplot(fig_map)
+fig_map, ax_map = plt.subplots(figsize=(12, 12))
+scale = [100, 20, 5] 
+colors = ["#3498db", "#2ecc71", "#e74c3c"]
 
-with col_chart:
-    st.subheader("📊 Порівняння 4-х стратегій")
-    fig, ax = plt.subplots(figsize=(8, 5))
-    
-    plot_colors = ['#2ecc71', '#e74c3c', '#f39c12', '#9b59b6']
-    for (strat_name, df), color in zip(results.items(), plot_colors):
-        ax.plot(df["Рік"], df["Споживання (кВт-год)"], marker='o', label=strat_name, color=color, linewidth=2)
-    
-    base_cons_line = df["Споживання (кВт-год)"] + df["Зекономлено від базового"]
-    ax.plot(df["Рік"], base_cons_line, color='black', linestyle='--', alpha=0.5, label='Без заходів (зростаюче місто)')
-            
-    ax.set_xlabel("Рік"); ax.set_ylabel("Споживання (кВт-год)")
-    ax.legend(); ax.grid(True, alpha=0.3)
-    st.pyplot(fig)
+for i, b_type in enumerate(cat_names):
+    count = b_history[selected_year][i]
+    dots_count = int(count / scale[i])
+    x = np.random.uniform(0, 100, dots_count)
+    y = np.random.uniform(0, 100, dots_count)
+    ax_map.scatter(x, y, label=f"{b_type} ({count} шт.)", color=colors[i], alpha=0.7, edgecolors='w', s=100 if i==2 else 60)
 
-# --- 4. ТАБЛИЦІ (ДЕТАЛЬНИЙ ЗВІТ) ---
+ax_map.set_xlim(0, 100)
+ax_map.set_ylim(0, 100)
+ax_map.axis('off')
+ax_map.legend(loc='upper right', bbox_to_anchor=(1.15, 1.05), fontsize=12)
+st.pyplot(fig_map, use_container_width=True)
+
+
+# === БЛОК 2: ВЕЛИКИЙ ГРАФІК НА ВСЮ ШИРИНУ ===
+st.write("---")
+st.subheader("📊 Порівняння 4-х стратегій (Детальний графік)")
+
+fig, ax = plt.subplots(figsize=(20, 15))
+
+plot_colors = ['#2ecc71', '#e74c3c', '#f39c12', '#9b59b6']
+for (strat_name, df), color in zip(results.items(), plot_colors):
+    ax.plot(df["Рік"], df["Споживання (кВт-год)"], marker='o', markersize=8, label=strat_name, color=color, linewidth=2)
+
+base_cons_line = df["Споживання (кВт-год)"] + df["Зекономлено від базового"]
+ax.plot(df["Рік"], base_cons_line, color='black', linestyle='--', alpha=0.5, label='Без заходів (зростаюче місто)', linewidth=2)
+        
+ax.set_xlabel("Рік", fontsize=16)
+ax.set_ylabel("Споживання (кВт-год)", fontsize=16)
+ax.tick_params(axis='both', which='major', labelsize=14)
+ax.legend(fontsize=14)
+ax.grid(True, alpha=0.5)
+
+st.pyplot(fig, use_container_width=True)
+
 st.write("---")
 st.subheader("📋 Детальні звіти (Купівля кроків та накопичення ефекту)")
 
