@@ -287,10 +287,14 @@ col_table, col_winner = st.columns([1, 1])
 with col_table:
     st.dataframe(df_totals.sort_values(by="Total savings (kWh-hour)", ascending=False).reset_index(drop=True), use_container_width=True)
 
+# Constants for CO2 calculation
+CO2_PER_KWH_GRAMS = 445
+total_co2_tonnes = (best_score * CO2_PER_KWH_GRAMS) / 1_000_000
+
 with col_winner:
     st.markdown(f"""
     <div style="
-        border: 4px solid #6e0000 
+        border: 4px solid #a85151;
         border-radius: 15px; 
         padding: 30px; 
         text-align: center; 
@@ -299,9 +303,12 @@ with col_winner:
         box-shadow: 5px 5px 15px rgba(0,0,0,0.3);
     ">
         <h2 style="margin-top: 0; color: #ecf0f1;">The best strategy:</h2>
-        <h1 style="color: #6e0000; font-size: 2.5em; margin: 10px 0;">{best_name}</h1>
+        <h1 style="color: #a85151; font-size: 2.5em; margin: 10px 0;">{best_name}</h1>
         <h3 style="color: #ecf0f1; font-weight: normal;">In total we saved:</h3>
         <h1 style="color: #2ecc71; font-size: 3em; margin: 0;">{best_score:,.0f} <span style="font-size: 0.5em; color: #bdc3c7;">kWh-hour</span></h1>
+        <hr style="border: 0.5px solid #bdc3c7; margin: 20px 0;">
+        <h3 style="color: #ecf0f1; font-weight: normal;">CO₂ reduction:</h3>
+        <h1 style="color: #3498db; font-size: 2.5em; margin: 0;">{total_co2_tonnes:,.0f} <span style="font-size: 0.5em; color: #bdc3c7;">tonnes</span></h1>
     </div>
     """, unsafe_allow_html=True)
 
